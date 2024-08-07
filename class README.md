@@ -1,70 +1,41 @@
-# 02_05 CI for Go
+# 02_06 Challenge: Develop a CI Workflow
 
-The following workflow updates the workflow suggested by GitHub Actions with the following:
+## INTRODUCTION
+It’s time for a challenge!
 
-- Adds an `env` block and a value for `GIN_MODE` set to `release`.
-- Adds a `permissions` block for the `build` job with a request for `write` permissions for `checks`.
-- Updates the `setup-go` action to use the input for `go-version-file: 'go.mod'`
-- Adds the action `morphy2k/revive-action` for linting.
-  - [Revive Action - GitHub Marketplace](https://github.com/marketplace/actions/revive-action)
-  - [Project website](https://github.com/mgechev/revive)
-- Adds the action `dominikh/staticcheck-action` for static analysis.
-  - [Staticcheck - GitHub Marketplace](https://github.com/marketplace/actions/staticcheck)
-  - [Project website](https://staticcheck.io/)
+You’re working with a team of data scientists that are just starting out with GitHub Actions.
 
+The team wants to add a continuous integration workflow to their GitHub repo so that all pushes to the main branch are linted using Flake8 and all tests are run using Pytest.
 
-## The Updated Workflow
-The updated workflow can be found in the code snippet below and in the repo here: [./go-ci-workflow.yml](./go-ci-workflow.yml).
+All code in the repo needs to use a specific version of Pandas, a popular Python library. They have code to test for the version but for some reason the test is failing.
 
-    name: Go
+They’d also like to find some way to make it easier to summarize the tests being run in the repo.
 
-    env:
-      GIN_MODE: release
+## REQUIREMENTS
+Help the team set up a continuous integration pipeline using a GitHub Actions starter workflow.
 
-    on:
-      push:
-        branches: [ "main" ]
-      pull_request:
-        branches: [ "main" ]
+1. Start by creating a new repo and adding the exercise files for this challenge.
 
-    jobs:
-      build:
-        runs-on: ubuntu-latest
+    - [requirements.txt](./requirements.txt)
+    - [test_pandas_version.py](./test_pandas_version.py)
 
-        permissions:
-          checks: write
+1. Use the GitHub Actions web interface to create a starter workflow.
+1. Run the workflow and observe the problems the team is referring to.
+1. Fix any errors in the code so that the tests pass successfully.
+1. Update the workflow to add a summary of the tests being run. 
+    1. Update the workflow so that it has permissions to create checks in the Actions interface.  
+    1. Update the call to `pytest` so that it creates a JUnit report named `junit.xml`.
+        
+            python -m pytest --verbose --junit-xml=junit.xml
+            
+    1. Add a new step that uses the [JUnit Report Action](https://github.com/marketplace/actions/junit-report-action) from the GitHub Marketplace:
 
-        steps:
-        - uses: actions/checkout@v3
+            - name: Publish Test Report
+            uses: mikepenz/action-junit-report@v3
+            if: success() || failure() # always run even if the previous step fails
+            with:
+                report_paths: '**/junit.xml'
+                detailed_summary: true
+                include_passed: true
 
-        - name: Set up Go
-          uses: actions/setup-go@v3
-          with:
-            go-version-file: 'go.mod'
-            cache: true
-
-        - name: Revive Action
-          uses: morphy2k/revive-action@v2.4.1
-
-        - name: Staticcheck
-          uses: dominikh/staticcheck-action@v1.3.0
-
-        - name: Build
-          run: |
-            go mod download
-            go install gotest.tools/gotestsum@latest
-
-        - name: Test
-          run: |
-            gotestsum --format=standard-verbose --junitfile=junit.xml
-
-        - name: Publish Test Report
-          uses: mikepenz/action-junit-report@v3
-          if: success() || failure() # always run even if the previous step fails
-          with:
-            report_paths: '**/junit.xml'
-            detailed_summary: true
-            include_passed: true
-
-
- For more information see the GitHub documentation for [Building and testing Go](https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go)
+This challenge should take about fifteen minutes to complete.
