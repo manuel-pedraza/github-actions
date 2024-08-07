@@ -16,7 +16,7 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
-    permission:
+    permissions:
       checks: read
 
     steps:
