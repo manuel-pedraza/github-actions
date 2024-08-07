@@ -1,71 +1,64 @@
-# 03_03_ci_cd_for_software_packages
-Continuous delivery workflows for software packages follow a pattern with these steps:
-- Configure the project to work with the package registry
-- Authenticate with the target registry
-- Build the package
-- Publish the package to the registry
+# 03_04_ci_cd_for_container_images
+This lesson demonstrates how to set up a CI/CD workflow for container images.
 
-## Registry configuration and authentication
-Each language has a specific configuration that identifies the target registry and how to authenticate with it.
-
-|Language |Config File          |
-|----------|---------------------|
-|JavaScript|package.json         |
-|Ruby      |.gemspec             |
-|Java      |settings.xml, pom.xml|
-|.Net      |.csproj              |
-
-## Build and publish
-Each language will also use its own, native tooling to build and publish a package.
-
-|Language |Build, publish Commands       |
-|----------|------------------------------|
-|JavaScript|npm ci; npm publish           |
-|Ruby      |gem build; gem push           |
-|Java      |mvn package; maven deploy     |
-|.Net      |dotnet pack; dotnet nuget push|
-
-## Package Versions
-The configuration files for a package also define a version number for the package being published.
-
-Version numbers can't be reused.
-
-Update code to reference a new version number with each new release.
-
-## Recommended Reading
-- [Working with a GitHub Packages Registry - GitHub Docs](https://docs.github.com/en/packages/working-with-a-github-packages-registry)
+Specifically, this demo implements a delivery workflow that:
+- Reuses a workflow to run integration tests
+- Collects metadata
+- Builds the image
+- Publishes the image to GitHub Packages
 
 ## Using the Exercise Files
-1. Create a new repo and upload the files for this lesson.  Note that the Java files need to be located in subdirectories.  Follow the steps in this document to move the files after uploading them: [Moving a file to a new location
-](https://docs.github.com/en/repositories/working-with-files/managing-files/moving-a-file-to-a-new-location).
-
-    Specifically, the file [HelloActions.java](./src/main/java/com/example/HelloActions.java) needs to have the following path:
-
-        ./src/main/java/com/example/HelloActions.java
-
-    And the file [HelloActionsTest.java](./src/test/java/com/example/HelloActionsTest.java) needs to have the following path:
-
-        ./src/test/java/com/example/HelloActionsTest.java
-
-1. Edit [pom.xml](./pom.xml).
+1. Create a new repo and upload the files for this lesson.
+1. Rename the file [python-ci-workflow.yml](./python-ci-workflow.yml) so that its located in the `.github/workflows` directory.
 
         Completing this step is key to having the workflow run properly!
 
-    Replace all occurrences of `GITHUB_USERNAME` and `GITHUB_REPONAME` with your GitHub username and the name for the GitHub repo you are using for this exercise.
-
-    Save the [pom.xml](./pom.xml) file and commit the changes to the repo.
-
 1. In the repo select the *Actions* tab.
-1. Select and configure the workflow *Publish Java Package with Maven*.
+1. Select and configure the workflow *Publish Docker Container*.
+1. Under `jobs`, add an ID named “integration” and the keyword `uses` followed by the path to `python-ci-workflow.yml`.
+
+    _NOTE that the path to the workflow starts with `./` and contains the full path the workflow file._
+
+    Add a permissions block followed by `contents: read` and `checks: write`.
+
+    The completed call to the reused workflow should be similar to the following:
+
+
+        jobs:
+            integration:
+                uses: ./.github/workflows/python-ci-workflow.yml
+                permissions:
+                contents: read
+                checks: write
+
+1. Under the job with the ID `build`, add `needs`, followed by the ID for the integration job.  This will cause the `build` job to wait for the `integration` job to complete.
+
+        build:
+            needs: [integration]
+
 1. Select *Start Commit* and then select *Commit New File*.
-1. Select the *Code* tab.
-1. Select *Create a new release*.
-1. Select *Choose a tag*.
-1. For the tag name, enter `v1.0.0`.
-1. Select *Create a new tag on publish*.
-1. For the release title, enter `v1.0.0`.  Enter text for the body of the release as well.
-1. Select *Publish*.
-1. Select the *Actions* tab and wait for the workflow to finish successfully.  If there are errors in the workflow run, review them and make corrections where needed.  If you get stuck, ask for help in the Q&A for the course.
+1. Select the *Actions* tab.
+1. Select the running workflow.
+1. Observe the `integration/build` job followed by the `build` job.
+1. Observe the updates to the Actions UI as the `integration/build` job completes.
 1. Once the workflow completes, select the *Code* tab.
 1. Refresh the page as needed until the package is listed under *Packages*.
 1. Select the package and review the details on the package page.
+
+# Fixing Warnings in the Annotations Section
+At the time this course was published, the *Publish Docker Container* workflow contained actions based on `Node 12`.
+
+[Node 12 has been out of support since April 2022 and has been deprecated by Github Actions](https://github.blog/changelog/2022-09-22-github-actions-all-actions-will-begin-running-on-node16-instead-of-node12/).
+
+This causes warnings to be written to the Actions UI.
+
+To remove these warnings, the version for actions used in this workflow need to be updated.
+
+Update your workflow to use the following actions with the indicated versions.  Also, check the provided Marketplace page to see if newer versions are available.
+
+|Action Marketplace Page|Action Name and Version|
+|--|--|
+|[Docker Setup Buildx](https://github.com/marketplace/actions/docker-setup-buildx)|`docker/setup-buildx-action@v2.5.0`|
+|[Docker Login](https://github.com/marketplace/actions/docker-login)|`docker/login-action@v2.1.0`|
+|[Docker Metadata action](https://github.com/marketplace/actions/docker-metadata-action)|`docker/metadata-action@v4.4.0`|
+|[Build and push Docker images](https://github.com/marketplace/actions/build-and-push-docker-images)|`docker/build-push-action@v4.0.0`|
