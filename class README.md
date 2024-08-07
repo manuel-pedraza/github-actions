@@ -1,41 +1,71 @@
-# 02_06 Challenge: Develop a CI Workflow
+# 03_03_ci_cd_for_software_packages
+Continuous delivery workflows for software packages follow a pattern with these steps:
+- Configure the project to work with the package registry
+- Authenticate with the target registry
+- Build the package
+- Publish the package to the registry
 
-## INTRODUCTION
-It’s time for a challenge!
+## Registry configuration and authentication
+Each language has a specific configuration that identifies the target registry and how to authenticate with it.
 
-You’re working with a team of data scientists that are just starting out with GitHub Actions.
+|Language |Config File          |
+|----------|---------------------|
+|JavaScript|package.json         |
+|Ruby      |.gemspec             |
+|Java      |settings.xml, pom.xml|
+|.Net      |.csproj              |
 
-The team wants to add a continuous integration workflow to their GitHub repo so that all pushes to the main branch are linted using Flake8 and all tests are run using Pytest.
+## Build and publish
+Each language will also use its own, native tooling to build and publish a package.
 
-All code in the repo needs to use a specific version of Pandas, a popular Python library. They have code to test for the version but for some reason the test is failing.
+|Language |Build, publish Commands       |
+|----------|------------------------------|
+|JavaScript|npm ci; npm publish           |
+|Ruby      |gem build; gem push           |
+|Java      |mvn package; maven deploy     |
+|.Net      |dotnet pack; dotnet nuget push|
 
-They’d also like to find some way to make it easier to summarize the tests being run in the repo.
+## Package Versions
+The configuration files for a package also define a version number for the package being published.
 
-## REQUIREMENTS
-Help the team set up a continuous integration pipeline using a GitHub Actions starter workflow.
+Version numbers can't be reused.
 
-1. Start by creating a new repo and adding the exercise files for this challenge.
+Update code to reference a new version number with each new release.
 
-    - [requirements.txt](./requirements.txt)
-    - [test_pandas_version.py](./test_pandas_version.py)
+## Recommended Reading
+- [Working with a GitHub Packages Registry - GitHub Docs](https://docs.github.com/en/packages/working-with-a-github-packages-registry)
 
-1. Use the GitHub Actions web interface to create a starter workflow.
-1. Run the workflow and observe the problems the team is referring to.
-1. Fix any errors in the code so that the tests pass successfully.
-1. Update the workflow to add a summary of the tests being run. 
-    1. Update the workflow so that it has permissions to create checks in the Actions interface.  
-    1. Update the call to `pytest` so that it creates a JUnit report named `junit.xml`.
-        
-            python -m pytest --verbose --junit-xml=junit.xml
-            
-    1. Add a new step that uses the [JUnit Report Action](https://github.com/marketplace/actions/junit-report-action) from the GitHub Marketplace:
+## Using the Exercise Files
+1. Create a new repo and upload the files for this lesson.  Note that the Java files need to be located in subdirectories.  Follow the steps in this document to move the files after uploading them: [Moving a file to a new location
+](https://docs.github.com/en/repositories/working-with-files/managing-files/moving-a-file-to-a-new-location).
 
-            - name: Publish Test Report
-            uses: mikepenz/action-junit-report@v3
-            if: success() || failure() # always run even if the previous step fails
-            with:
-                report_paths: '**/junit.xml'
-                detailed_summary: true
-                include_passed: true
+    Specifically, the file [HelloActions.java](./src/main/java/com/example/HelloActions.java) needs to have the following path:
 
-This challenge should take about fifteen minutes to complete.
+        ./src/main/java/com/example/HelloActions.java
+
+    And the file [HelloActionsTest.java](./src/test/java/com/example/HelloActionsTest.java) needs to have the following path:
+
+        ./src/test/java/com/example/HelloActionsTest.java
+
+1. Edit [pom.xml](./pom.xml).
+
+        Completing this step is key to having the workflow run properly!
+
+    Replace all occurrences of `GITHUB_USERNAME` and `GITHUB_REPONAME` with your GitHub username and the name for the GitHub repo you are using for this exercise.
+
+    Save the [pom.xml](./pom.xml) file and commit the changes to the repo.
+
+1. In the repo select the *Actions* tab.
+1. Select and configure the workflow *Publish Java Package with Maven*.
+1. Select *Start Commit* and then select *Commit New File*.
+1. Select the *Code* tab.
+1. Select *Create a new release*.
+1. Select *Choose a tag*.
+1. For the tag name, enter `v1.0.0`.
+1. Select *Create a new tag on publish*.
+1. For the release title, enter `v1.0.0`.  Enter text for the body of the release as well.
+1. Select *Publish*.
+1. Select the *Actions* tab and wait for the workflow to finish successfully.  If there are errors in the workflow run, review them and make corrections where needed.  If you get stuck, ask for help in the Q&A for the course.
+1. Once the workflow completes, select the *Code* tab.
+1. Refresh the page as needed until the package is listed under *Packages*.
+1. Select the package and review the details on the package page.
